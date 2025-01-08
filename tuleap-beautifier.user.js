@@ -62,14 +62,13 @@
         }
 
         load() {
-            var json
             try {
-                json = GM_getValue("config");
+                var json = GM_getValue("config");
                 if (typeof json == "string") json = JSON.parse(json);
+                this.groups = _.map(json.groups, item => Group.fromJSON(item));
             } catch(e) {
-                json = {};
+                this.groups = [];
             }
-            this.groups = _.map(json.groups, item => Group.fromJSON(item));
         }
 
         addGroup(groupName, ...values) {
