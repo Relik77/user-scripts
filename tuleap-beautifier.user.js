@@ -29,21 +29,28 @@
     }
 
     class Group {
-        constructor(name, values = []) {
+        constructor(name, alias, values = []) {
             this.name = name;
+            this.alias = alias || name;
             this.values = values;
         }
 
         static fromJSON(json) {
             return new Group(
                 json.name,
+                json.alias,
                 json.values
             );
+        }
+
+        martchSearch(search) {
+            return this.name.toLowerCase() == search.toLowerCase() || this.alias.toLowerCase() == search.toLowerCase();
         }
 
         toJSON() {
             return {
                 name: this.name,
+                alias: this.alias,
                 values: this.values
             };
         }
@@ -57,7 +64,8 @@
         load() {
             var json
             try {
-                json = JSON.parse(GM_getValue("config"));
+                json = GM_getValue("config");
+                if (typeof json == "string") json = JSON.parse(json);
             } catch(e) {
                 json = {};
             }
@@ -87,7 +95,7 @@
         }
 
         save() {
-            GM_setValue("config", JSON.stringify(this.toJSON()));
+            GM_setValue("config", this.toJSON());
         }
     }
 
@@ -103,7 +111,6 @@
                         return hljs.highlight(code, { language }).value;
                     }
                 }));
-            console.log(this.data);
         }
 
         run() {
@@ -114,8 +121,11 @@
 
         markdownit() {
             $(".tracker_artifact_followup_comment_body").each((i, elt) => {
-                const text = $(elt).text();
-                $(elt).html(this.marked.parse(text));
+                var format = $(elt).parent().find('[name^="tracker_artifact_followup_comment_body_format_"]').val();
+                if (format == "text") {
+                    const text = $(elt).text();
+                    $(elt).html(this.marked.parse(text));
+                }
             });
         }
 
@@ -126,7 +136,7 @@
             var tableRows = table.find("> tbody > tr:not(.tracker_report_table_aggregates)");
 
             var showGroup = (colId, args) => {
-                var group = _.find(this.data.groups, group => group.name.toLowerCase() == args.toLowerCase());
+                var group = _.find(this.data.groups, group => group.martchSearch(args));
                 if (group) {
                     tableRows.each((index, row) => {
                         var cell = $($(row).find("td")[colId]);
@@ -140,7 +150,7 @@
             }
 
             var hideGroup = (colId, args) => {
-                var group = _.find(this.data.groups, group => group.name.toLowerCase() == args.toLowerCase());
+                var group = _.find(this.data.groups, group => group.martchSearch(args));
                 if (group) {
                     tableRows.each((index, row) => {
                         var cell = $($(row).find("td")[colId]);
